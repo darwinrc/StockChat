@@ -1,0 +1,35 @@
+version: "3.5"
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-stockchat}
+    ports:
+      - "5432:5432"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  srv:
+    build:
+      context: ./server
+    ports:
+      - "5000:5000"
+
+  bot:
+    build:
+      context: ./bot
+    ports:
+      - "5001:5000"
+
+  vue:
+    build:
+      context: ./client
+    ports:
+      - "3000:3000"
