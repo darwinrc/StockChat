@@ -1,85 +1,177 @@
-<script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
+  <form @click.prevent="onSubmit">
+    <div v-if="sessionUser">
+      <div class="chat-history" ref="chatHistory">
+        <ul>
+          <li v-for="post in rcvMessage">
+            <span class="chat-history__user">{{ post.user.username }}</span> :
+            <span class="chat-history__message">{{ post.message }}</span>
+          </li>
+        </ul>
+      </div>
+      <div class="chat-input">
+      <input class="message" v-model="message" type="text" >
+      <input class="button" type="submit" value="Send" @click="sendMessage">
+        <input class="button" type="submit" value="Logout" @click="logout">
+      </div>
     </div>
-  </header>
-
-  <RouterView />
+    <div v-else>
+      <input class="user" type="text" v-model="username" placeholder="Username">
+      <input class="password" type="password" v-model="password" placeholder="Password">
+      <input class="button" type="submit" value="Login" @click="login">
+      <div class="alert" v-if="!userValid">
+        Invalid username or password. Try again!
+      </div>
+    </div>
+  </form>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+<script>
+export default {
+  name: 'App',
+  data() {
+    return {
+      message: "",
+      socket: null,
+      rcvMessage: "",
+      username: "",
+      password: "",
+      sessionUser: "",
+      userValid : true,
+    }
+  },
+
+  methods: {
+    instanceSocket() {
+      this.socket = new WebSocket("ws://localhost:5000/ws")
+
+      this.socket.onmessage = (msg) => {
+        this.acceptMsg(msg)
+      }
+
+      this.socket.onopen = (evt) => {
+        let msg = {
+          userID: this.sessionUser.id,
+          user: {
+            id: this.sessionUser.id,
+            username: this.sessionUser.username,
+          },
+          message: "<SayHi>"
+        }
+        this.socket.send(JSON.stringify(msg))
+      }
+    },
+
+    sendMessage() {
+      if(this.message.trim() === "") {
+        return
+      }
+
+      let msg = {
+        userID: this.sessionUser.id,
+        user: {
+          id: this.sessionUser.id,
+          username: this.sessionUser.username,
+        },
+        message: this.message
+      }
+      this.socket.send(JSON.stringify(msg))
+      this.message = ''
+    },
+
+    acceptMsg(msg) {
+      this.rcvMessage = JSON.parse(msg.data).reverse()
+    },
+
+    async login() {
+      let user = {
+        username: this.username,
+        password: this.password,
+      }
+
+      const res = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(user),
+      })
+
+      res.json().then((user) => {
+        if(!user.username) {
+          this.userValid = false
+        } else {
+          sessionStorage.user = JSON.stringify(user)
+          this.sessionUser = user
+          this.userValid = true
+        }
+
+        this.instanceSocket()
+      })
+    },
+
+    logout() {
+      let msg = {
+        userID: this.sessionUser.id,
+        user: {
+          id: this.sessionUser.id,
+          username: this.sessionUser.username,
+        },
+        message: "<SayBye>"
+      }
+      this.socket.send(JSON.stringify(msg))
+
+      delete(sessionStorage.user)
+      this.sessionUser = null
+      this.userValid = true
+      this.username = ""
+      this.password = ""
+    }
+  },
+}
+</script>
+
+<style>
+#app {
+ font-family: sans-serif;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.chat-input {
+  margin-top: 20px;
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+.chat-history {
+  width: 93%;
+  height: 500px;
+  border: black 1px solid;
+  background: white;
+  color: black;
+  overflow: scroll;
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+.chat-history__user {
+  color: blueviolet;
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
+.chat-history > ul > li {
+  list-style-type: none;
+  margin: 10px;
+
+  border-bottom: 1px solid lightgray;
+
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
+
+.message {
+  width: 70%;
 }
 
-nav a:first-of-type {
-  border: 0;
+.alert {
+  color: red;
 }
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.button {
+  width: 10%;
+  margin-left: 20px;
 }
 </style>
