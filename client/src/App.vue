@@ -3,7 +3,7 @@
     <div v-if="sessionUser">
       <div class="chat-history" ref="chatHistory">
         <ul>
-          <li v-for="post in rcvMessage">
+          <li v-for="post in posts">
             <span class="chat-history__user">{{ post.user.username }}</span> :
             <span class="chat-history__message">{{ post.message }}</span>
           </li>
@@ -33,7 +33,7 @@ export default {
     return {
       message: "",
       socket: null,
-      rcvMessage: "",
+      posts: [],
       username: "",
       password: "",
       sessionUser: "",
@@ -80,7 +80,7 @@ export default {
     },
 
     acceptMsg(msg) {
-      this.rcvMessage = JSON.parse(msg.data).reverse()
+      this.posts = JSON.parse(msg.data).reverse()
     },
 
     async login() {
@@ -146,7 +146,7 @@ export default {
   border: black 1px solid;
   background: white;
   color: black;
-  overflow: scroll;
+  overflow-y: scroll;
 }
 
 .chat-history__user {
