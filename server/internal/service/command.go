@@ -107,7 +107,6 @@ func (s *CommandService) ProcessCommand(command string, broadcast chan []byte) {
 			log.Fatalf("error unmarshaling message: %s", err)
 		}
 
-		// TODO. FIXME
 		uID, _ := uuid.FromBytes([]byte("48ccb5c1-9a19-42cd-bd41-3ac5c8af1108"))
 
 		post := &model.Post{
