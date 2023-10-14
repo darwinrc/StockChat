@@ -66,12 +66,6 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 			return
 		}
 
-		posts, err := h.Service.GetRecentPosts(ctx)
-		if err != nil {
-			log.Fatalf("error getting recents posts: %s", err)
-			return
-		}
-
 		post := &model.Post{}
 		if err := json.Unmarshal(msg, &post); err != nil {
 			log.Fatalf("error getting post from json: %s", err)
@@ -81,9 +75,15 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 		// if the messages is a command to query a stock, process the command asynchronously
 		// and share the broadcast channel, so it can send the message back to the chatroom
 		if strings.Index(post.Message, stockBotMessage) == 0 {
-			go h.CommandService.ProcessCommand(post.Message, posts, broadcast)
+			go h.CommandService.ProcessCommand(post.Message, broadcast)
 
 			continue
+		}
+
+		posts, err := h.Service.GetRecentPosts(ctx)
+		if err != nil {
+			log.Fatalf("error getting recents posts: %s", err)
+			return
 		}
 
 		newPost, err := h.Service.CreatePost(ctx, post)

@@ -25,10 +25,9 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 	userHandler.Attach(router)
 
-	commandService := service.NewCommandService()
-
 	postRepo := repo.NewPostRepository(conn.GetDB())
 	postService := service.NewPostService(postRepo)
+	commandService := service.NewCommandService(postRepo)
 	postHandler := handler.NewPostHandler(postService, commandService)
 	postHandler.Attach(router)
 

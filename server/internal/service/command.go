@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/streadway/amqp"
@@ -9,7 +10,9 @@ import (
 	"strings"
 )
 
-type CommandService struct{}
+type CommandService struct {
+	PostRepo model.PostRepo
+}
 
 type stockPayload struct {
 	StockCode string `json:"stockCode"`
@@ -31,12 +34,14 @@ var (
 )
 
 // NewCommandService builds a service and injects its dependencies
-func NewCommandService() *CommandService {
-	return &CommandService{}
+func NewCommandService(postRepo model.PostRepo) *CommandService {
+	return &CommandService{
+		PostRepo: postRepo,
+	}
 }
 
 // ProcessCommand processes the command, publishing it to the rabbitmq exchange <stockchat>
-func (s *CommandService) ProcessCommand(command string, posts []*model.Post, broadcast chan []byte) {
+func (s *CommandService) ProcessCommand(command string, broadcast chan []byte) {
 	log.Println("Processing command: ", command)
 
 	stockCode := strings.SplitAfter(command, "=")[1]
@@ -112,6 +117,11 @@ func (s *CommandService) ProcessCommand(command string, posts []*model.Post, bro
 				Username: "StockBot",
 			},
 			Message: pl.StockQuote,
+		}
+
+		posts, err := s.PostRepo.GetRecentPosts(context.Background(), postsLimit)
+		if err != nil {
+			log.Fatalf("error getting posts from database: %s", err)
 		}
 
 		posts = append([]*model.Post{post}, posts...)
