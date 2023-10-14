@@ -78,12 +78,12 @@ func (s *CommandService) BroadcastCommand(broadcast chan []byte) {
 	}
 
 	for message := range messages {
-		log.Printf("Quote received: %s\n", string(message.Body))
-
 		var pl quotePayload
 		if err := json.Unmarshal(message.Body, &pl); err != nil {
 			log.Fatalf("error unmarshaling message: %s", err)
 		}
+
+		log.Printf("Quote received: %s\n", string(message.Body))
 
 		uID, _ := uuid.FromBytes([]byte(userID))
 		ts := time.Now().UTC()
