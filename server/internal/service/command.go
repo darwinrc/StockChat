@@ -1,13 +1,12 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/google/uuid"
-	"github.com/streadway/amqp"
 	"log"
 	"server/internal/model"
 	"strings"
+	"time"
 )
 
 type CommandService struct {
@@ -23,14 +22,8 @@ type quotePayload struct {
 }
 
 const (
-	amqpUrl      = "amqp://guest:guest@localhost:5672/"
-	exchangeName = "stockchat"
-	queueRes     = "stockchat-queue-res"
-)
-
-var (
-	quotes   = []string{}
-	messages <-chan amqp.Delivery
+	userID   = "48ccb5c1-9a19-42cd-bd41-3ac5c8af1108"
+	username = "StockBot"
 )
 
 // NewCommandService builds a service and injects its dependencies
@@ -44,9 +37,8 @@ func NewCommandService(postRepo model.PostRepo) *CommandService {
 func (s *CommandService) ProcessCommand(command string, broadcast chan []byte) {
 	log.Println("Processing command: ", command)
 
-	stockCode := strings.SplitAfter(command, "=")[1]
 	pl := stockPayload{
-		StockCode: stockCode,
+		StockCode: strings.SplitAfter(command, "=")[1],
 	}
 
 	body, err := json.Marshal(pl)
@@ -55,83 +47,58 @@ func (s *CommandService) ProcessCommand(command string, broadcast chan []byte) {
 		return
 	}
 
-	msg := amqp.Publishing{
-		ContentType: "text/plain",
-		Body:        body,
-	}
-
-	conn, err := amqp.Dial(amqpUrl)
-	if err != nil {
-		log.Fatalf("error dialing amqp: %s", err)
-	}
+	conn, ch, err := setupAMQExchange()
 	defer conn.Close()
-
-	ch, err := conn.Channel()
-	if err != nil {
-		log.Fatalf("error opening channel: %s", err)
-	}
 	defer ch.Close()
 
-	if err = ch.ExchangeDeclare(exchangeName, "topic", true, false, false, false, nil); err != nil {
-		log.Fatalf("error declaring exchange: %s", err)
+	if err != nil {
+		log.Fatalf("error setting up the amq connection and exchange: %s", err)
 	}
 
-	if err = ch.Publish(exchangeName, "messages.stock", false, false, msg); err != nil {
+	if err := publishAMQMessage(ch, body); err != nil {
 		log.Fatalf("error publishing to the exchange: %s", err)
 	}
 
 	log.Printf("Stock sent: %s\n", body)
+}
 
-	//TODO.. Refactor
+// BroadcastCommand subscribes to the rabbitmq exchange <stockchat> and broadcasts the new quotes received
+func (s *CommandService) BroadcastCommand(broadcast chan []byte) {
+	conn, ch, err := setupAMQExchange()
+	defer conn.Close()
+	defer ch.Close()
 
-	qreq, err := ch.QueueDeclare(queueRes, false, false, false, false, nil)
 	if err != nil {
-		log.Fatalf("error declaring queue: %s", err)
+		log.Fatalf("error setting up the amq connection and exchange: %s", err)
 	}
 
-	if err = ch.QueueBind(qreq.Name, "messages.quote", exchangeName, false, nil); err != nil {
-		log.Fatalf("error binding exchange to queue: %s", err)
-	}
-
-	messages, err = ch.Consume(qreq.Name, "", true, false, false, false, nil)
+	messages, err := consumeAMQMessages(ch)
 	if err != nil {
-		log.Fatalf("error consuming queued messages: %s", err)
+		log.Fatalf("error consuming messages: %s", err)
 	}
 
 	for message := range messages {
 		log.Printf("Quote received: %s\n", string(message.Body))
 
 		var pl quotePayload
-
 		if err := json.Unmarshal(message.Body, &pl); err != nil {
 			log.Fatalf("error unmarshaling message: %s", err)
 		}
 
-		uID, _ := uuid.FromBytes([]byte("48ccb5c1-9a19-42cd-bd41-3ac5c8af1108"))
+		uID, _ := uuid.FromBytes([]byte(userID))
+		ts := time.Now().UTC()
 
 		post := &model.Post{
-			UserID: "48ccb5c1-9a19-42cd-bd41-3ac5c8af1108",
+			UserID: userID,
 			User: &model.User{
 				ID:       uID,
-				Username: "StockBot",
+				Username: username,
 			},
-			Message: pl.StockQuote,
+			Message:   pl.StockQuote,
+			Timestamp: &ts,
 		}
 
-		posts, err := s.PostRepo.GetRecentPosts(context.Background(), postsLimit)
-		if err != nil {
-			log.Fatalf("error getting posts from database: %s", err)
-		}
-
-		posts = append([]*model.Post{post}, posts...)
-
-		jsonPosts, err := json.Marshal(posts)
-		if err != nil {
-			log.Fatalf("error getting posts to json: %s", err)
-			return
-		}
-
-		broadcast <- jsonPosts
+		addCommandToMemory(post)
+		broadcastPosts(s.PostRepo, broadcast)
 	}
-
 }

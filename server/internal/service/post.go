@@ -9,8 +9,6 @@ import (
 const (
 	userJoinMessage  = "<SayHi>"
 	userLeaveMessage = "<SayBye>"
-	postsLimit       = 49
-	stockBotMessage  = "/stock="
 )
 
 type PostService struct {
@@ -24,8 +22,8 @@ func NewPostService(repo model.PostRepo) *PostService {
 	}
 }
 
-// CreatePost inserts a new post into the database, except for the message to query a stock
-func (s *PostService) CreatePost(ctx context.Context, post *model.Post) (*model.Post, error) {
+// CreatePost inserts a new post into the database and sends the updated post list to the broadcast channel
+func (s *PostService) CreatePost(ctx context.Context, post *model.Post, broadcast chan []byte) error {
 	if post.Message == userJoinMessage {
 		post.Message = fmt.Sprintf("%s joined the chatroom!", post.User.Username)
 	}
@@ -34,10 +32,12 @@ func (s *PostService) CreatePost(ctx context.Context, post *model.Post) (*model.
 		post.Message = fmt.Sprintf("%s left the chatroom!", post.User.Username)
 	}
 
-	return s.Repo.CreatePost(ctx, post)
-}
+	post, err := s.Repo.CreatePost(ctx, post)
+	if err != nil {
+		return err
+	}
 
-// GetRecentPosts returns the last 50 posts from the database
-func (s *PostService) GetRecentPosts(ctx context.Context) ([]*model.Post, error) {
-	return s.Repo.GetRecentPosts(ctx, postsLimit)
+	broadcastPosts(s.Repo, broadcast)
+
+	return nil
 }

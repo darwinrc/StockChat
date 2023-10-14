@@ -20,6 +20,5 @@ type PostRepo interface {
 }
 
 type PostService interface {
-	CreatePost(ctx context.Context, post *Post) (*Post, error)
-	GetRecentPosts(ctx context.Context) ([]*Post, error)
+	CreatePost(ctx context.Context, post *Post, broadcast chan []byte) error
 }

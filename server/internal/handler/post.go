@@ -23,12 +23,6 @@ const (
 var (
 	broadcast = make(chan []byte)
 	clients   = make(map[*websocket.Conn]bool)
-
-	upgrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
 )
 
 // NewPostHandler builds a handler and injects its dependencies
@@ -46,19 +40,27 @@ func (h *PostHandler) Attach(r *mux.Router) {
 
 // HandleWebSocketConnection establishes a web socket connection and reads messages coming through it
 func (h *PostHandler) HandleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Fatalf("error upgrading connection to support websockets: %s", err)
 		return
 	}
-	defer conn.Close()
 
-	clients[conn] = true
 	h.readMessages(r.Context(), conn)
 }
 
 // readMessages watches for messages coming through the websocket connection and queues them in the broadcast channel
 func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
+	defer conn.Close()
+
+	clients[conn] = true
+
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
@@ -66,41 +68,25 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 			return
 		}
 
-		post := &model.Post{}
+		var post *model.Post
 		if err := json.Unmarshal(msg, &post); err != nil {
 			log.Fatalf("error getting post from json: %s", err)
 			return
 		}
 
-		// if the messages is a command to query a stock, process the command asynchronously
-		// and share the broadcast channel, so it can send the message back to the chatroom
+		// if the message is a command to query a stock, process the command asynchronously
+		// share the broadcast channel, so it can send the message back to the chatroom
 		if strings.Index(post.Message, stockBotMessage) == 0 {
 			go h.CommandService.ProcessCommand(post.Message, broadcast)
+			go h.CommandService.BroadcastCommand(broadcast)
 
 			continue
 		}
 
-		posts, err := h.Service.GetRecentPosts(ctx)
-		if err != nil {
-			log.Fatalf("error getting recents posts: %s", err)
-			return
-		}
-
-		newPost, err := h.Service.CreatePost(ctx, post)
-		if err != nil {
+		if err := h.Service.CreatePost(ctx, post, broadcast); err != nil {
 			log.Fatalf("error creating post: %s", err)
 			return
 		}
-
-		posts = append([]*model.Post{newPost}, posts...)
-
-		jsonPosts, err := json.Marshal(posts)
-		if err != nil {
-			log.Fatalf("error getting posts to json: %s", err)
-			return
-		}
-
-		broadcast <- jsonPosts
 	}
 }
 
