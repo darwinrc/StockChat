@@ -6,6 +6,7 @@
           <li v-for="post in posts">
             <span class="chat-history__user">{{ post.user.username }}</span> :
             <span class="chat-history__message">{{ post.message }}</span>
+            <span class="chat-history__timestamp">{{ post.timestamp }}</span>
           </li>
         </ul>
       </div>
@@ -31,11 +32,11 @@ export default {
   name: 'App',
   data() {
     return {
-      message: "",
+      message: "/stock=aapl.us",
       socket: null,
       posts: [],
-      username: "",
-      password: "",
+      username: "UserOne",
+      password: "12345",
       sessionUser: "",
       userValid : true,
     }
@@ -80,7 +81,16 @@ export default {
     },
 
     acceptMsg(msg) {
-      this.posts = JSON.parse(msg.data).reverse()
+      this.posts = JSON.parse(msg.data).reverse().map(p => {
+        if(p === null || p.timestamp === null || p.timestamp === undefined) {
+          return p
+        }
+
+        const date = new Date(p.timestamp)
+        p.timestamp = date.toLocaleDateString('en-US', { weekday: 'long', hour: "numeric", minute: "numeric" })
+
+        return p
+      })
     },
 
     async login() {
@@ -159,6 +169,12 @@ export default {
 
   border-bottom: 1px solid lightgray;
 
+}
+
+.chat-history__timestamp {
+  color: gray;
+  float: right;
+  font-size: small;
 }
 
 

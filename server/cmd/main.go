@@ -25,9 +25,11 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 	userHandler.Attach(router)
 
+	commandService := service.NewCommandService()
+
 	postRepo := repo.NewPostRepository(conn.GetDB())
 	postService := service.NewPostService(postRepo)
-	postHandler := handler.NewPostHandler(postService)
+	postHandler := handler.NewPostHandler(postService, commandService)
 	postHandler.Attach(router)
 
 	// Separate goroutine for listening to new messages

@@ -8,11 +8,17 @@ import (
 	"log"
 	"net/http"
 	"server/internal/model"
+	"strings"
 )
 
 type PostHandler struct {
-	Service model.PostService
+	Service        model.PostService
+	CommandService model.CommmandService
 }
+
+const (
+	stockBotMessage = "/stock="
+)
 
 var (
 	broadcast = make(chan []byte)
@@ -26,9 +32,10 @@ var (
 )
 
 // NewPostHandler builds a handler and injects its dependencies
-func NewPostHandler(s model.PostService) *PostHandler {
+func NewPostHandler(s model.PostService, cs model.CommmandService) *PostHandler {
 	return &PostHandler{
-		Service: s,
+		Service:        s,
+		CommandService: cs,
 	}
 }
 
@@ -59,23 +66,33 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 			return
 		}
 
+		posts, err := h.Service.GetRecentPosts(ctx)
+		if err != nil {
+			log.Fatalf("error getting recents posts: %s", err)
+			return
+		}
+
 		post := &model.Post{}
 		if err := json.Unmarshal(msg, &post); err != nil {
 			log.Fatalf("error getting post from json: %s", err)
 			return
 		}
 
-		_, err = h.Service.CreatePost(ctx, post)
+		// if the messages is a command to query a stock, process the command asynchronously
+		// and share the broadcast channel, so it can send the message back to the chatroom
+		if strings.Index(post.Message, stockBotMessage) == 0 {
+			go h.CommandService.ProcessCommand(post.Message, posts, broadcast)
+
+			continue
+		}
+
+		newPost, err := h.Service.CreatePost(ctx, post)
 		if err != nil {
 			log.Fatalf("error creating post: %s", err)
 			return
 		}
 
-		posts, err := h.Service.GetRecentPosts(ctx)
-		if err != nil {
-			log.Fatalf("error getting recents posts: %s", err)
-			return
-		}
+		posts = append([]*model.Post{newPost}, posts...)
 
 		jsonPosts, err := json.Marshal(posts)
 		if err != nil {
