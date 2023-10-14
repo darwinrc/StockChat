@@ -65,13 +65,11 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			log.Fatalf("error getting reader: %s", err)
-			return
 		}
 
 		var post *model.Post
 		if err := json.Unmarshal(msg, &post); err != nil {
 			log.Fatalf("error getting post from json: %s", err)
-			return
 		}
 
 		// if the message is a command to query a stock, process the command asynchronously
@@ -85,7 +83,6 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 
 		if err := h.Service.CreatePost(ctx, post, broadcast); err != nil {
 			log.Fatalf("error creating post: %s", err)
-			return
 		}
 	}
 }

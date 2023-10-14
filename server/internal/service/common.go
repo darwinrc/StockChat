@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"github.com/streadway/amqp"
 	"log"
+	"os"
 	"server/internal/model"
 	"sort"
 )
 
 const (
-	amqpUrl      = "amqp://guest:guest@localhost:5672/"
 	exchangeName = "stockchat"
 	stockKey     = "messages.stock"
 	quoteKey     = "messages.quote"
@@ -50,6 +50,10 @@ func addCommandToMemory(post *model.Post) {
 
 // setupAMQExchange configures and returns a connection and exchange to rabbitmq
 func setupAMQExchange() (*amqp.Connection, *amqp.Channel, error) {
+	user, password, host := os.Getenv("RABBITMQ_USERNAME"), os.Getenv("RABBITMQ_PASSWORD"), os.Getenv("RABBITMQ_HOST")
+
+	amqpUrl := fmt.Sprintf("amqp://%s:%s@%s/", user, password, host)
+
 	conn, err := amqp.Dial(amqpUrl)
 	if err != nil {
 		return nil, nil, errors.New(fmt.Sprintf("error dialing amqp: %s", err))

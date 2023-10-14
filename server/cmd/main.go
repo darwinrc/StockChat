@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"server/db"
@@ -13,6 +14,10 @@ import (
 )
 
 func main() {
+	if err := godotenv.Load(".env"); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	conn, err := db.NewDatabase()
 	if err != nil {
 		fmt.Errorf("error getting db connection: %s", err.Error())

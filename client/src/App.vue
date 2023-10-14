@@ -32,7 +32,7 @@ export default {
   name: 'App',
   data() {
     return {
-      message: "/stock=aapl.us",
+      message: "",
       socket: null,
       posts: [],
       username: "UserOne",
@@ -114,9 +114,9 @@ export default {
           sessionStorage.user = JSON.stringify(user)
           this.sessionUser = user
           this.userValid = true
-        }
 
-        this.instanceSocket()
+          this.instanceSocket()
+        }
       })
     },
 
