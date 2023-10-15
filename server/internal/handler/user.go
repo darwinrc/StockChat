@@ -73,12 +73,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err = h.Service.LoginUser(r.Context(), user)
-	if err != nil {
-		log.Fatalf("error with login user: %s", err)
-		http.Error(w, "Failed to login user", http.StatusBadRequest)
-		return
-	}
+	user = h.Service.LoginUser(r.Context(), user)
 
 	jsonUser, err := json.Marshal(user)
 	if err != nil {

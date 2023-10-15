@@ -20,6 +20,7 @@
       <input class="user" type="text" v-model="username" placeholder="Username">
       <input class="password" type="password" v-model="password" placeholder="Password">
       <input class="button" type="submit" value="Login" @click="login">
+      <input class="button" type="submit" value="Signup" @click="signup">
       <div class="alert" v-if="!userValid">
         Invalid username or password. Try again!
       </div>
@@ -117,6 +118,37 @@ export default {
 
           this.instanceSocket()
         }
+      }).catch ((e) => {
+        console.log(e)
+      })
+    },
+
+    async signup() {
+      let user = {
+        username: this.username,
+        password: this.password,
+      }
+
+      const res = await fetch("http://localhost:5000/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(user),
+      })
+
+      res.json().then((user) => {
+        if(!user.username) {
+          this.userValid = false
+        } else {
+          sessionStorage.user = JSON.stringify(user)
+          this.sessionUser = user
+          this.userValid = true
+
+          this.instanceSocket()
+        }
+      }).catch ((e) => {
+        console.log(e)
       })
     },
 

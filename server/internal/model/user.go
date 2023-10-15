@@ -14,10 +14,10 @@ type User struct {
 
 type UserRepo interface {
 	CreateUser(ctx context.Context, user *User) (*User, error)
-	GetUserByCredentials(ctx context.Context, user *User) (*User, error)
+	GetUserByName(ctx context.Context, user *User) (*User, error)
 }
 
 type UserService interface {
 	CreateUser(ctx context.Context, user *User) (*User, error)
-	LoginUser(ctx context.Context, user *User) (*User, error)
+	LoginUser(ctx context.Context, user *User) *User
 }

@@ -35,12 +35,12 @@ func (r *userRepository) CreateUser(ctx context.Context, user *model.User) (*mod
 	return user, nil
 }
 
-// GetUserByCredentials searches for a user in the database given the username and password
-func (r *userRepository) GetUserByCredentials(ctx context.Context, user *model.User) (*model.User, error) {
+// GetUserByName searches for a user in the database given the username
+func (r *userRepository) GetUserByName(ctx context.Context, user *model.User) (*model.User, error) {
 	dbUser := &model.User{}
-	query := `SELECT id, username FROM users WHERE username = $1 AND password = $2`
+	query := `SELECT id, username, password FROM users WHERE username = $1`
 
-	if err := r.db.QueryRowContext(ctx, query, user.Username, user.Password).Scan(&dbUser.ID, &dbUser.Username); err != nil {
+	if err := r.db.QueryRowContext(ctx, query, user.Username).Scan(&dbUser.ID, &dbUser.Username, &dbUser.Password); err != nil {
 		if err.Error() != "sql: no rows in result set" {
 			return nil, errors.New(fmt.Sprintf("error querying the users table: %s", err))
 		}

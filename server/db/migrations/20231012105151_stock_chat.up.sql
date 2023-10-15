@@ -13,7 +13,6 @@ CREATE TABLE posts
     timestamp timestamp not null default now()
 );
 
-INSERT INTO users (id, username, password) VALUES ('48ccb5c1-9a19-42cd-bd41-3ac5c8af1108', 'StockBot', '12345');
-INSERT INTO users (username, password) VALUES ('UserOne', '12345');
-INSERT INTO users (username, password) VALUES ('UserTwo', '12345');
-INSERT INTO users (username, password) VALUES ('UserThree', '12345');
+INSERT INTO users (id, username, password) VALUES ('48ccb5c1-9a19-42cd-bd41-3ac5c8af1108', 'StockBot', '$2a$13$x4z0aJ39z6e6Bo88m70/6uHLH.Kzo0KssEtq9BLZurL1Pe.SS/zDC');
+INSERT INTO users (username, password) VALUES ('UserOne', '$2a$13$x4z0aJ39z6e6Bo88m70/6uHLH.Kzo0KssEtq9BLZurL1Pe.SS/zDC');
+INSERT INTO users (username, password) VALUES ('UserTwo', '$2a$13$x4z0aJ39z6e6Bo88m70/6uHLH.Kzo0KssEtq9BLZurL1Pe.SS/zDC');

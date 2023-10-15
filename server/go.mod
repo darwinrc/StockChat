@@ -7,11 +7,10 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
+	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/streadway/amqp v1.1.0
+	golang.org/x/crypto v0.14.0
 )
 
-require (
-	github.com/felixge/httpsnoop v1.0.1 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
-)
+require github.com/felixge/httpsnoop v1.0.1 // indirect
