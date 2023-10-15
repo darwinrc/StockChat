@@ -57,7 +57,7 @@ func (h *PostHandler) HandleWebSocketConnection(w http.ResponseWriter, r *http.R
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Fatalf("error upgrading connection to support websockets: %s", err)
+		log.Printf("error upgrading connection to support websockets: %s", err)
 		return
 	}
 
@@ -73,12 +73,12 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
-			log.Fatalf("error getting reader: %s", err)
+			log.Printf("error getting reader: %s", err)
 		}
 
 		var post *model.Post
 		if err := json.Unmarshal(msg, &post); err != nil {
-			log.Fatalf("error getting post from json: %s", err)
+			log.Printf("error getting post from json: %s", err)
 		}
 
 		// if the message is a command to query a stock, process the command asynchronously
@@ -91,7 +91,7 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 		}
 
 		if err := h.Service.CreatePost(ctx, post, broadcast); err != nil {
-			log.Fatalf("error creating post: %s", err)
+			log.Printf("error creating post: %s", err)
 		}
 	}
 }

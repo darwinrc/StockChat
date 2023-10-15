@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"log"
+	"server/internal/infra"
 	"server/internal/model"
 	"server/internal/repo"
 	"strings"
@@ -11,7 +12,8 @@ import (
 )
 
 type CommandService struct {
-	PostRepo repo.PostRepo
+	PostRepo   repo.PostRepo
+	AMQPClient infra.AMQPClient
 }
 
 type stockPayload struct {
@@ -30,9 +32,10 @@ const (
 var commands []*model.Post
 
 // NewCommandService builds a service and injects its dependencies
-func NewCommandService(postRepo repo.PostRepo) *CommandService {
+func NewCommandService(postRepo repo.PostRepo, amqpClient infra.AMQPClient) *CommandService {
 	return &CommandService{
-		PostRepo: postRepo,
+		PostRepo:   postRepo,
+		AMQPClient: amqpClient,
 	}
 }
 
@@ -40,26 +43,29 @@ func NewCommandService(postRepo repo.PostRepo) *CommandService {
 func (s *CommandService) ProcessCommand(command string, broadcast chan []byte) {
 	log.Println("Processing command: ", command)
 
+	tokens := strings.SplitAfter(command, "=")
+	if len(tokens) != 2 {
+		log.Printf("invalid command: %s. It should be something like /stock=aapl.us", command)
+		return
+	}
+
 	pl := stockPayload{
-		StockCode: strings.SplitAfter(command, "=")[1],
+		StockCode: tokens[1],
 	}
 
 	body, err := json.Marshal(pl)
 	if err != nil {
-		log.Fatalf("error marshaling payload: %s", err)
+		log.Printf("error marshaling payload: %s", err)
 		return
 	}
 
-	conn, ch, err := setupAMQExchange()
-	defer conn.Close()
-	defer ch.Close()
-
+	err = s.AMQPClient.SetupAMQExchange()
 	if err != nil {
-		log.Fatalf("error setting up the amq connection and exchange: %s", err)
+		log.Printf("error setting up the amq connection and exchange: %s", err)
 	}
 
-	if err := publishAMQMessage(ch, body); err != nil {
-		log.Fatalf("error publishing to the exchange: %s", err)
+	if err := s.AMQPClient.PublishAMQMessage(body); err != nil {
+		log.Printf("error publishing to the exchange: %s", err)
 	}
 
 	log.Printf("Stock sent: %s\n", body)
@@ -67,23 +73,22 @@ func (s *CommandService) ProcessCommand(command string, broadcast chan []byte) {
 
 // BroadcastCommand subscribes to the rabbitmq exchange <stockchat> and broadcasts the new quotes received
 func (s *CommandService) BroadcastCommand(broadcast chan []byte) {
-	conn, ch, err := setupAMQExchange()
-	defer conn.Close()
-	defer ch.Close()
+	err := s.AMQPClient.SetupAMQExchange()
+	defer s.AMQPClient.Close()
 
 	if err != nil {
-		log.Fatalf("error setting up the amq connection and exchange: %s", err)
+		log.Printf("error setting up the amq connection and exchange: %s", err)
 	}
 
-	messages, err := consumeAMQMessages(ch)
+	messages, err := s.AMQPClient.ConsumeAMQMessages()
 	if err != nil {
-		log.Fatalf("error consuming messages: %s", err)
+		log.Printf("error consuming messages: %s", err)
 	}
 
 	for message := range messages {
 		var pl quotePayload
 		if err := json.Unmarshal(message.Body, &pl); err != nil {
-			log.Fatalf("error unmarshaling message: %s", err)
+			log.Printf("error unmarshaling message: %s", err)
 		}
 
 		log.Printf("Quote received: %s\n", string(message.Body))

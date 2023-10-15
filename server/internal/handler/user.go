@@ -38,19 +38,19 @@ func (h *UserHandler) HandleSignup(w http.ResponseWriter, r *http.Request) {
 
 	user := &model.User{}
 	if err := json.Unmarshal(body, &user); err != nil {
-		log.Fatalf("error getting user from json: %s", err)
+		log.Printf("error getting user from json: %s", err)
 		return
 	}
 
 	user, err = h.Service.CreateUser(r.Context(), user)
 	if err != nil {
-		log.Fatalf("error creating user: %s", err)
+		log.Printf("error creating user: %s", err)
 		return
 	}
 
 	jsonUser, err := json.Marshal(user)
 	if err != nil {
-		log.Fatalf("error getting user to json: %s", err)
+		log.Printf("error getting user to json: %s", err)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	user := &model.User{}
 	if err := json.Unmarshal(body, &user); err != nil {
-		log.Fatalf("error getting user from json: %s", err)
+		log.Printf("error getting user from json: %s", err)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	jsonUser, err := json.Marshal(user)
 	if err != nil {
-		log.Fatalf("error getting user to json: %s", err)
+		log.Printf("error getting user to json: %s", err)
 		return
 	}
 

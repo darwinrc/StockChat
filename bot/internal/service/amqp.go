@@ -32,7 +32,7 @@ func setupAMQExchange() (*amqp.Connection, *amqp.Channel, error) {
 	}
 
 	if err = ch.ExchangeDeclare(exchangeName, "topic", true, false, false, false, nil); err != nil {
-		log.Fatalf("error declaring exchange: %s", err)
+		log.Printf("error declaring exchange: %s", err)
 		return nil, nil, errors.New(fmt.Sprintf("error declaring amqp exchange: %s", err))
 	}
 

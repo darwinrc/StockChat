@@ -32,9 +32,21 @@ You can access with any of them using the password `12345`, or you can create ne
 
 #### Running Separately
 
-To run the `srv` or `bot` services locally (outside of docker), stop the container and run (you should have Go 1.20 installed):
+To run the `srv` or `bot` services locally (outside of docker)
+
+Stop the container
 ```
 docker stop stockchat-srv-1 (or stockchat-bot-1)
+```
+
+Change the env variables specified in the `.env` file: 
+```
+POSTGRES_HOST=localhost:5432
+RABBITMQ_HOST=localhost:5672
+```
+
+Run the local server (you should have Go 1.20 installed):
+```
 cd server (or cd bot)
 go run cmd/main.go
 ```

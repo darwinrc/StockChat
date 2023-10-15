@@ -51,7 +51,7 @@ func (s *PostService) CreatePost(ctx context.Context, post *model.Post, broadcas
 func broadcastPosts(repo repo.PostRepo, broadcast chan []byte) {
 	posts, err := repo.GetRecentPosts(context.Background(), postsLimit)
 	if err != nil {
-		log.Fatalf("error getting posts from database: %s", err)
+		log.Printf("error getting posts from database: %s", err)
 	}
 
 	posts = append(posts, commands...)
@@ -61,7 +61,7 @@ func broadcastPosts(repo repo.PostRepo, broadcast chan []byte) {
 
 	bPosts, err := json.Marshal(posts)
 	if err != nil {
-		log.Fatalf("error marshaling posts: %s", err)
+		log.Printf("error marshaling posts: %s", err)
 		return
 	}
 

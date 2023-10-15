@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"server/db"
 	"server/internal/handler"
+	"server/internal/infra"
 	"server/internal/repo"
 	"server/internal/service"
 )
@@ -30,9 +31,11 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 	userHandler.Attach(router)
 
+	amqpClient := infra.NewAMQPClient()
+
 	postRepo := repo.NewPostRepository(conn.GetDB())
 	postService := service.NewPostService(postRepo)
-	commandService := service.NewCommandService(postRepo)
+	commandService := service.NewCommandService(postRepo, amqpClient)
 	postHandler := handler.NewPostHandler(postService, commandService)
 	postHandler.Attach(router)
 

@@ -30,12 +30,12 @@ func (s *StockService) ProcessMessages() {
 	defer ch.Close()
 
 	if err != nil {
-		log.Fatalf("error setting up the amq connection and exchange: %s", err)
+		log.Printf("error setting up the amq connection and exchange: %s", err)
 	}
 
 	messages, err := consumeAMQMessages(ch)
 	if err != nil {
-		log.Fatalf("error consuming messages: %s", err)
+		log.Printf("error consuming messages: %s", err)
 	}
 
 	for message := range messages {
@@ -44,13 +44,13 @@ func (s *StockService) ProcessMessages() {
 		var spl stockPayload
 		err := json.Unmarshal(message.Body, &spl)
 		if err != nil {
-			log.Fatalf("error unmarshaling payload: %s", err)
+			log.Printf("error unmarshaling payload: %s", err)
 			return
 		}
 
 		stockQuote, err := getStockQuote(spl.StockCode)
 		if err != nil {
-			log.Fatalf("error getting stock quote from stooq: %s", err)
+			log.Printf("error getting stock quote from stooq: %s", err)
 		}
 
 		qpl := quotePayload{
@@ -59,12 +59,12 @@ func (s *StockService) ProcessMessages() {
 
 		body, err := json.Marshal(qpl)
 		if err != nil {
-			log.Fatalf("error unmarshaling payload: %s", err)
+			log.Printf("error unmarshaling payload: %s", err)
 			return
 		}
 
 		if err := publishAMQMessage(ch, body); err != nil {
-			log.Fatalf("error publishing to the exchange: %s", err)
+			log.Printf("error publishing to the exchange: %s", err)
 		}
 
 		log.Printf("Quote sent: %s\n", string(body))
