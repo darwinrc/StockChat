@@ -36,7 +36,7 @@ export default {
       message: "",
       socket: null,
       posts: [],
-      username: "UserOne",
+      username: "Alice",
       password: "12345",
       sessionUser: "",
       userValid : true,
