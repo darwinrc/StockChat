@@ -1,15 +1,11 @@
 package service
 
 import (
-	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/streadway/amqp"
 	"log"
 	"os"
-	"server/internal/model"
-	"sort"
 )
 
 const (
@@ -17,36 +13,7 @@ const (
 	stockKey     = "messages.stock"
 	quoteKey     = "messages.quote"
 	queueName    = "stockchat-queue-quotes"
-	postsLimit   = 50
 )
-
-var commands []*model.Post
-
-// broadcastPosts sends the merged list of posts + commands to the broadcast channel
-func broadcastPosts(repo model.PostRepo, broadcast chan []byte) {
-	posts, err := repo.GetRecentPosts(context.Background(), postsLimit)
-	if err != nil {
-		log.Fatalf("error getting posts from database: %s", err)
-	}
-
-	posts = append(posts, commands...)
-	sort.Slice(posts, func(i, j int) bool {
-		return posts[i].Timestamp.After(*posts[j].Timestamp)
-	})
-
-	bPosts, err := json.Marshal(posts)
-	if err != nil {
-		log.Fatalf("error marshaling posts: %s", err)
-		return
-	}
-
-	broadcast <- bPosts
-}
-
-// addCommandToMemory adds a post to the commands in-memory list
-func addCommandToMemory(post *model.Post) {
-	commands = append([]*model.Post{post}, commands...)
-}
 
 // setupAMQExchange configures and returns a connection and exchange to rabbitmq
 func setupAMQExchange() (*amqp.Connection, *amqp.Channel, error) {

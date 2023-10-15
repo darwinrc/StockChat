@@ -5,12 +5,13 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"server/internal/model"
+	"server/internal/repo"
 	"strings"
 	"time"
 )
 
 type CommandService struct {
-	PostRepo model.PostRepo
+	PostRepo repo.PostRepo
 }
 
 type stockPayload struct {
@@ -26,8 +27,10 @@ const (
 	username = "StockBot"
 )
 
+var commands []*model.Post
+
 // NewCommandService builds a service and injects its dependencies
-func NewCommandService(postRepo model.PostRepo) *CommandService {
+func NewCommandService(postRepo repo.PostRepo) *CommandService {
 	return &CommandService{
 		PostRepo: postRepo,
 	}
@@ -101,4 +104,9 @@ func (s *CommandService) BroadcastCommand(broadcast chan []byte) {
 		addCommandToMemory(post)
 		broadcastPosts(s.PostRepo, broadcast)
 	}
+}
+
+// addCommandToMemory adds a post to the commands in-memory list
+func addCommandToMemory(post *model.Post) {
+	commands = append([]*model.Post{post}, commands...)
 }

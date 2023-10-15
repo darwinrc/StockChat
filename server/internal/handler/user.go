@@ -7,14 +7,15 @@ import (
 	"log"
 	"net/http"
 	"server/internal/model"
+	"server/internal/service"
 )
 
 type UserHandler struct {
-	Service model.UserService
+	Service service.UserService
 }
 
 // NewUserHandler builds a handler and injects its dependencies
-func NewUserHandler(s model.UserService) *UserHandler {
+func NewUserHandler(s service.UserService) *UserHandler {
 	return &UserHandler{
 		Service: s,
 	}

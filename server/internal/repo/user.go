@@ -2,23 +2,24 @@ package repo
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"server/db"
 	"server/internal/model"
 )
 
-type UserRepo struct {
-	DB *sql.DB
+type UserRepo interface {
+	CreateUser(ctx context.Context, user *model.User) (*model.User, error)
+	GetUserByName(ctx context.Context, user *model.User) (*model.User, error)
 }
 
 type userRepository struct {
-	db Database
+	db db.DB
 }
 
 // NewUserRepository builds a userRepository and injects its dependencies
-func NewUserRepository(db Database) model.UserRepo {
+func NewUserRepository(db db.DB) UserRepo {
 	return &userRepository{db: db}
 }
 

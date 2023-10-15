@@ -2,21 +2,26 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"server/internal/model"
+	"server/internal/repo"
+	"sort"
 )
 
 const (
 	userJoinMessage  = "<SayHi>"
 	userLeaveMessage = "<SayBye>"
+	postsLimit       = 50
 )
 
 type PostService struct {
-	Repo model.PostRepo
+	Repo repo.PostRepo
 }
 
 // NewPostService builds a service and injects its dependencies
-func NewPostService(repo model.PostRepo) *PostService {
+func NewPostService(repo repo.PostRepo) *PostService {
 	return &PostService{
 		Repo: repo,
 	}
@@ -40,4 +45,25 @@ func (s *PostService) CreatePost(ctx context.Context, post *model.Post, broadcas
 	broadcastPosts(s.Repo, broadcast)
 
 	return nil
+}
+
+// broadcastPosts sends the merged list of posts + commands to the broadcast channel
+func broadcastPosts(repo repo.PostRepo, broadcast chan []byte) {
+	posts, err := repo.GetRecentPosts(context.Background(), postsLimit)
+	if err != nil {
+		log.Fatalf("error getting posts from database: %s", err)
+	}
+
+	posts = append(posts, commands...)
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].Timestamp.After(*posts[j].Timestamp)
+	})
+
+	bPosts, err := json.Marshal(posts)
+	if err != nil {
+		log.Fatalf("error marshaling posts: %s", err)
+		return
+	}
+
+	broadcast <- bPosts
 }

@@ -1,12 +1,18 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
 
 	_ "github.com/lib/pq"
 )
+
+type DB interface {
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
+}
 
 type Database struct {
 	db *sql.DB
@@ -22,6 +28,7 @@ func NewDatabase() (*Database, error) {
 		return nil, err
 	}
 
+	//return &database{db: db}, nil
 	return &Database{db: db}, nil
 }
 

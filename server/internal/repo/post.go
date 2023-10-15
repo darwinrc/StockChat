@@ -2,23 +2,24 @@ package repo
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"server/db"
 	"server/internal/model"
 )
 
-type PostRepo struct {
-	DB *sql.DB
+type PostRepo interface {
+	CreatePost(ctx context.Context, post *model.Post) (*model.Post, error)
+	GetRecentPosts(ctx context.Context, limit int) ([]*model.Post, error)
 }
 
 type postRepository struct {
-	db Database
+	db db.DB
 }
 
 // NewPostRepository builds a postRepository and injects its dependencies
-func NewPostRepository(db Database) model.PostRepo {
+func NewPostRepository(db db.DB) PostRepo {
 	return &postRepository{db: db}
 }
 

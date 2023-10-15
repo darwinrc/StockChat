@@ -7,19 +7,25 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"server/internal/model"
+	"server/internal/repo"
 )
 
-type UserService struct {
-	Repo model.UserRepo
+type UserService interface {
+	CreateUser(ctx context.Context, user *model.User) (*model.User, error)
+	LoginUser(ctx context.Context, user *model.User) *model.User
+}
+
+type userService struct {
+	Repo repo.UserRepo
 }
 
 // NewUserService builds a service and injects its dependencies
-func NewUserService(repo model.UserRepo) *UserService {
-	return &UserService{Repo: repo}
+func NewUserService(repo repo.UserRepo) UserService {
+	return &userService{Repo: repo}
 }
 
 // CreateUser inserts a new user into the database
-func (s *UserService) CreateUser(ctx context.Context, user *model.User) (*model.User, error) {
+func (s *userService) CreateUser(ctx context.Context, user *model.User) (*model.User, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 13)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("error hashing password: %s", err))
@@ -31,7 +37,7 @@ func (s *UserService) CreateUser(ctx context.Context, user *model.User) (*model.
 }
 
 // LoginUser queries a user using username and password and returns it if found
-func (s *UserService) LoginUser(ctx context.Context, user *model.User) *model.User {
+func (s *userService) LoginUser(ctx context.Context, user *model.User) *model.User {
 	dbUser, err := s.Repo.GetUserByName(ctx, user)
 	if err != nil {
 		dbUser = &model.User{}

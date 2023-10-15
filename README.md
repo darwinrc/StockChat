@@ -19,7 +19,9 @@ The local development environment consists of 6 docker containers:
 - `vue`: hosts the `vuejs` frontend application.
 
 #### Running the application
-The recommended way to start all the applications together is executing `docker-compose up` in the root project folder.
+The recommended way to start all the applications together is executing `docker-compose up` in the root project folder. 
+
+Please wait until all services are fully up, it make take a while especially for the rabbitmq container.
 
 - Access the front-end site with the following URLs: `http://localhost:3000`.
 Two users are already created: `Alice` and `Bob`.
