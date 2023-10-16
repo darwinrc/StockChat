@@ -9,22 +9,12 @@ import (
 	"net/http"
 	"server/internal/model"
 	"server/internal/service"
-	"strings"
 )
-
-type CommmandService interface {
-	ProcessCommand(command string)
-	BroadcastCommand(broadcast chan []byte)
-}
 
 type PostHandler struct {
 	Service        service.PostService
-	CommandService CommmandService
+	CommandService service.CommmandService
 }
-
-const (
-	stockBotMessage = "/stock="
-)
 
 var (
 	broadcast = make(chan []byte)
@@ -32,7 +22,7 @@ var (
 )
 
 // NewPostHandler builds a handler and injects its dependencies
-func NewPostHandler(s service.PostService, cs CommmandService) *PostHandler {
+func NewPostHandler(s service.PostService, cs service.CommmandService) *PostHandler {
 	return &PostHandler{
 		Service:        s,
 		CommandService: cs,
@@ -78,10 +68,15 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 			log.Printf("error getting post from json: %s", err)
 		}
 
-		// if the message is a command to query a stock, process the command asynchronously
-		// share the broadcast channel, so it can send the message back to the chatroom
-		if strings.Index(post.Message, stockBotMessage) == 0 {
-			go h.CommandService.ProcessCommand(post.Message)
+		stockCode, err := h.CommandService.ParseCommand(post.Message)
+		if err := json.Unmarshal(msg, &post); err != nil {
+			log.Printf("error parsing the command: %s", err)
+		}
+
+		if stockCode != "" {
+			// if the message is a command to query a stock, process the command asynchronously
+			// share the broadcast channel, so it can send the message back to the chatroom
+			go h.CommandService.ProcessCommand(stockCode)
 			go h.CommandService.BroadcastCommand(broadcast)
 
 			continue

@@ -2,6 +2,8 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"log"
 	"server/internal/infra"
@@ -11,7 +13,13 @@ import (
 	"time"
 )
 
-type CommandService struct {
+type CommmandService interface {
+	ProcessCommand(command string)
+	BroadcastCommand(broadcast chan []byte)
+	ParseCommand(command string) (string, error)
+}
+
+type commandService struct {
 	PostRepo   repo.PostRepo
 	AMQPClient infra.AMQPClient
 }
@@ -25,32 +33,42 @@ type quotePayload struct {
 }
 
 const (
-	userID   = "48ccb5c1-9a19-42cd-bd41-3ac5c8af1108"
-	username = "StockBot"
+	userID       = "48ccb5c1-9a19-42cd-bd41-3ac5c8af1108"
+	username     = "StockBot"
+	stockCommand = "/stock="
 )
 
 var commands []*model.Post
 
 // NewCommandService builds a service and injects its dependencies
-func NewCommandService(postRepo repo.PostRepo, amqpClient infra.AMQPClient) *CommandService {
-	return &CommandService{
+func NewCommandService(postRepo repo.PostRepo, amqpClient infra.AMQPClient) CommmandService {
+	return &commandService{
 		PostRepo:   postRepo,
 		AMQPClient: amqpClient,
 	}
 }
 
-// ProcessCommand processes the command, publishing it to the rabbitmq exchange <stockchat>
-func (s *CommandService) ProcessCommand(command string) {
-	log.Println("Processing command: ", command)
+// ParseCommand extracts the stock code from the command
+// return "" if it is not a stock command, or it is malformed
+func (s *commandService) ParseCommand(command string) (string, error) {
+	if strings.Index(command, stockCommand) != 0 {
+		return "", nil
+	}
 
 	tokens := strings.SplitAfter(command, "=")
 	if len(tokens) != 2 {
-		log.Printf("invalid command: %s. It should be something like /stock=aapl.us", command)
-		return
+		return "", errors.New(fmt.Sprintf("invalid command: %s. It should be something like /stock=aapl.us", command))
 	}
 
+	return tokens[1], nil
+}
+
+// ProcessCommand processes the command, publishing it to the rabbitmq exchange <stockchat>
+func (s *commandService) ProcessCommand(stockCode string) {
+	log.Println("Processing command for: ", stockCode)
+
 	pl := stockPayload{
-		StockCode: tokens[1],
+		StockCode: stockCode,
 	}
 
 	body, err := json.Marshal(pl)
@@ -72,7 +90,7 @@ func (s *CommandService) ProcessCommand(command string) {
 }
 
 // BroadcastCommand subscribes to the rabbitmq exchange <stockchat> and broadcasts the new quotes received
-func (s *CommandService) BroadcastCommand(broadcast chan []byte) {
+func (s *commandService) BroadcastCommand(broadcast chan []byte) {
 	err := s.AMQPClient.SetupAMQExchange()
 	defer s.AMQPClient.Close()
 
