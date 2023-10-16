@@ -204,7 +204,7 @@ export default {
 
 .chat-history {
   width: 93%;
-  max-height: 500px;
+  height: 500px;
   border: black 1px solid;
   background: white;
   color: black;
