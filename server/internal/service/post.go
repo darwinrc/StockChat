@@ -16,19 +16,23 @@ const (
 	postsLimit       = 50
 )
 
-type PostService struct {
+type PostService interface {
+	CreatePost(ctx context.Context, post *model.Post, broadcast chan []byte) error
+}
+
+type postService struct {
 	Repo repo.PostRepo
 }
 
 // NewPostService builds a service and injects its dependencies
-func NewPostService(repo repo.PostRepo) *PostService {
-	return &PostService{
+func NewPostService(repo repo.PostRepo) PostService {
+	return &postService{
 		Repo: repo,
 	}
 }
 
 // CreatePost inserts a new post into the database and sends the updated post list to the broadcast channel
-func (s *PostService) CreatePost(ctx context.Context, post *model.Post, broadcast chan []byte) error {
+func (s *postService) CreatePost(ctx context.Context, post *model.Post, broadcast chan []byte) error {
 	if post.Message == userJoinMessage {
 		post.Message = fmt.Sprintf("%s joined the chatroom!", post.User.Username)
 	}

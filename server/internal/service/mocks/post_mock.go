@@ -3,3 +3,48 @@
 
 // Package mock_service is a generated GoMock package.
 package mock_service
+
+import (
+	context "context"
+	reflect "reflect"
+	model "server/internal/model"
+
+	gomock "github.com/golang/mock/gomock"
+)
+
+// MockPostService is a mock of PostService interface.
+type MockPostService struct {
+	ctrl     *gomock.Controller
+	recorder *MockPostServiceMockRecorder
+}
+
+// MockPostServiceMockRecorder is the mock recorder for MockPostService.
+type MockPostServiceMockRecorder struct {
+	mock *MockPostService
+}
+
+// NewMockPostService creates a new mock instance.
+func NewMockPostService(ctrl *gomock.Controller) *MockPostService {
+	mock := &MockPostService{ctrl: ctrl}
+	mock.recorder = &MockPostServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPostService) EXPECT() *MockPostServiceMockRecorder {
+	return m.recorder
+}
+
+// CreatePost mocks base method.
+func (m *MockPostService) CreatePost(ctx context.Context, post *model.Post, broadcast chan []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePost", ctx, post, broadcast)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreatePost indicates an expected call of CreatePost.
+func (mr *MockPostServiceMockRecorder) CreatePost(ctx, post, broadcast interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePost", reflect.TypeOf((*MockPostService)(nil).CreatePost), ctx, post, broadcast)
+}

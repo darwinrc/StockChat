@@ -48,13 +48,21 @@ func (s *StockService) ProcessMessages() {
 			return
 		}
 
+		var quote string
+
 		stockQuote, err := getStockQuote(spl.StockCode)
-		if err != nil {
+		if err == nil {
+			quote = fmt.Sprintf("%s quote is $%.2f per share", strings.ToUpper(spl.StockCode), stockQuote)
+		} else {
 			log.Printf("error getting stock quote from stooq: %s", err)
+
+			if err.Error() == "stock code not found" {
+				quote = fmt.Sprintf("%s is not a valid stock code. Please check stooq.com for the stock list", strings.ToUpper(spl.StockCode))
+			}
 		}
 
 		qpl := quotePayload{
-			StockQuote: fmt.Sprintf("%s quote is $%.2f per share", strings.ToUpper(spl.StockCode), stockQuote),
+			StockQuote: quote,
 		}
 
 		body, err := json.Marshal(qpl)

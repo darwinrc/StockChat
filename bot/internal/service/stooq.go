@@ -34,6 +34,10 @@ func getStockQuote(stockCode string) (float64, error) {
 		return 0, errors.New(fmt.Sprintf("error reading row: %s", err))
 	}
 
+	if records[6] == "N/D" {
+		return 0, errors.New("stock code not found")
+	}
+
 	quote, err := strconv.ParseFloat(records[6], 64)
 	if err != nil {
 		return 0, errors.New(fmt.Sprintf("error parsing quote value: %s", err))

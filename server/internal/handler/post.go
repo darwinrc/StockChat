@@ -8,12 +8,9 @@ import (
 	"log"
 	"net/http"
 	"server/internal/model"
+	"server/internal/service"
 	"strings"
 )
-
-type PostService interface {
-	CreatePost(ctx context.Context, post *model.Post, broadcast chan []byte) error
-}
 
 type CommmandService interface {
 	ProcessCommand(command string)
@@ -21,7 +18,7 @@ type CommmandService interface {
 }
 
 type PostHandler struct {
-	Service        PostService
+	Service        service.PostService
 	CommandService CommmandService
 }
 
@@ -35,7 +32,7 @@ var (
 )
 
 // NewPostHandler builds a handler and injects its dependencies
-func NewPostHandler(s PostService, cs CommmandService) *PostHandler {
+func NewPostHandler(s service.PostService, cs CommmandService) *PostHandler {
 	return &PostHandler{
 		Service:        s,
 		CommandService: cs,
