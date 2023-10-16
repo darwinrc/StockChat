@@ -16,7 +16,7 @@ type PostService interface {
 }
 
 type CommmandService interface {
-	ProcessCommand(command string, broadcast chan []byte)
+	ProcessCommand(command string)
 	BroadcastCommand(broadcast chan []byte)
 }
 
@@ -84,7 +84,7 @@ func (h *PostHandler) readMessages(ctx context.Context, conn *websocket.Conn) {
 		// if the message is a command to query a stock, process the command asynchronously
 		// share the broadcast channel, so it can send the message back to the chatroom
 		if strings.Index(post.Message, stockBotMessage) == 0 {
-			go h.CommandService.ProcessCommand(post.Message, broadcast)
+			go h.CommandService.ProcessCommand(post.Message)
 			go h.CommandService.BroadcastCommand(broadcast)
 
 			continue

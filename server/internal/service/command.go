@@ -40,7 +40,7 @@ func NewCommandService(postRepo repo.PostRepo, amqpClient infra.AMQPClient) *Com
 }
 
 // ProcessCommand processes the command, publishing it to the rabbitmq exchange <stockchat>
-func (s *CommandService) ProcessCommand(command string, broadcast chan []byte) {
+func (s *CommandService) ProcessCommand(command string) {
 	log.Println("Processing command: ", command)
 
 	tokens := strings.SplitAfter(command, "=")
