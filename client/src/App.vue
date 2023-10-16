@@ -1,7 +1,7 @@
 <template>
   <form @click.prevent="onSubmit">
     <div v-if="sessionUser">
-      <div class="chat-history" ref="chatHistory">
+      <div class="chat-history" :ref="setScrollableDivRef">
         <ul>
           <li v-for="post in posts">
             <span class="chat-history__user">{{ post.user.username }}</span> :
@@ -33,6 +33,7 @@ export default {
   name: 'App',
   data() {
     return {
+      scrollableDiv: null,
       message: "",
       socket: null,
       posts: [],
@@ -42,8 +43,22 @@ export default {
       userValid : true,
     }
   },
+  mounted() {
+    this.$nextTick(() => {
+      this.scrollableDiv = this.$refs.scrollableDiv;
+    });
+  },
 
   methods: {
+    setScrollableDivRef(el) {
+      this.scrollableDiv = el;
+    },
+    scrollToBottom() {
+      console.log(this.scrollableDiv)
+      if (this.scrollableDiv) {
+        this.scrollableDiv.scrollTop = this.scrollableDiv.scrollHeight
+      }
+    },
     instanceSocket() {
       this.socket = new WebSocket("ws://localhost:5000/ws")
 
@@ -92,6 +107,11 @@ export default {
 
         return p
       })
+
+      this.$nextTick(() => {
+        this.scrollToBottom()
+      });
+
     },
 
     async login() {
@@ -184,7 +204,7 @@ export default {
 
 .chat-history {
   width: 93%;
-  height: 500px;
+  max-height: 500px;
   border: black 1px solid;
   background: white;
   color: black;
