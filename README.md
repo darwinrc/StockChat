@@ -1,4 +1,4 @@
-# Jobsity Stock Chat
+# Stock Chat
 
 
 ## Requirements:
